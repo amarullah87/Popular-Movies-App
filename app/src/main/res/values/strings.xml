@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+    <string name="sort_by">Sort By</string>
+    <string name="most_popular">Most Popular</string>
+    <string name="top_rated">Top Rated</string>
+    <string name="favorites">Favorites</string>
+    <string name="trailer">Watch Trailer</string>
+    <string name="add_favorites">Add Favorites</string>
+    <string name="oops_network">Oops! There is No Network Connection Available</string>
+    <string name="no_data">There is no data available.</string>
+    <string name="upcoming">Upcoming</string>
+    <string name="movie_rating">TMDb: %1$s/10</string>
+    <string name="movie_detail">Movie Detail</string>
+</resources>
