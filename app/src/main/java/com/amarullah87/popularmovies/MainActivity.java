@@ -57,14 +57,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view, int position) {
                 Movie item = movies.get(position);
+                Bundle extras = new Bundle();
                 Intent intent = new Intent(getApplicationContext(), DetailsMovieActivity.class);
-                intent.putExtra("idMovie", String.valueOf(item.getId()));
-                intent.putExtra("average", String.valueOf(item.getVote_average()));
-                intent.putExtra("title", item.getTitle());
-                intent.putExtra("poster", item.getPoster_path());
-                intent.putExtra("backdrop", item.getBackdrop_path());
-                intent.putExtra("overview", item.getOverview());
-                intent.putExtra("releaseDate", item.getRelease_date());
+                extras.putString("idMovie", String.valueOf(item.getId()));
+                extras.putString("idMovie", String.valueOf(item.getId()));
+                extras.putString("average", String.valueOf(item.getVoteAverage()));
+                extras.putString("title", item.getTitle());
+                extras.putString("poster", item.getPosterPath());
+                extras.putString("backdrop", item.getBackdropPath());
+                extras.putString("overview", item.getOverview());
+                extras.putString("releaseDate", item.getReleaseDate());
+                intent.putExtras(extras);
                 startActivity(intent);
             }
         }));
@@ -136,22 +139,29 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
 
-        movies.clear();
-
         switch (item.getItemId()){
             case R.id.sort_by_most_popular:
+                if(!movies.isEmpty()) {
+                    movies.clear();
+                }
                 loadDefaultMovies(POPULAR);
                 mSortBy = POPULAR;
                 item.setChecked(true);
                 break;
 
             case R.id.sort_by_top_rated:
+                if(!movies.isEmpty()) {
+                    movies.clear();
+                }
                 loadDefaultMovies(TOP_RATED);
                 mSortBy = TOP_RATED;
                 item.setChecked(true);
                 break;
 
             case R.id.sort_by_upcoming:
+                if(!movies.isEmpty()) {
+                    movies.clear();
+                }
                 loadDefaultMovies(UPCOMING);
                 mSortBy = UPCOMING;
                 item.setChecked(true);

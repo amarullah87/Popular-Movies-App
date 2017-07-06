@@ -46,7 +46,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MyViewHolder
     public void onBindViewHolder(final MovieAdapter.MyViewHolder holder, int position) {
         final Movie item = items.get(position);
 
-        if(item.getPoster_path() == null){
+        if(item.getPosterPath() == null){
             holder.title.setVisibility(View.VISIBLE);
             holder.thumbnail.setVisibility(View.GONE);
         }

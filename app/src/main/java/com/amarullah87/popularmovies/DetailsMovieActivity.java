@@ -129,13 +129,18 @@ public class DetailsMovieActivity extends AppCompatActivity{
     }
 
     private void initViews() {
-        idMovie = getIntent().getStringExtra("idMovie");
-        average = getIntent().getStringExtra("average");
-        title = getIntent().getStringExtra("title");
-        poster = getIntent().getStringExtra("poster");
-        backdrop = getIntent().getStringExtra("backdrop");
-        overview = getIntent().getStringExtra("overview");
-        releaseDate = getIntent().getStringExtra("releaseDate");
+
+        Intent intent = getIntent();
+        Bundle extras = intent.getExtras();
+        if(extras != null) {
+            idMovie = extras.getString("idMovie");
+            average = extras.getString("average");
+            title = extras.getString("title");
+            poster = extras.getString("poster");
+            backdrop = extras.getString("backdrop");
+            overview = extras.getString("overview");
+            releaseDate = extras.getString("releaseDate");
+        }
 
         movieTitle.setText(title);
         Picasso.with(this)

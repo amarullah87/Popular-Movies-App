@@ -11,4 +11,7 @@
     <string name="upcoming">Upcoming</string>
     <string name="movie_rating">TMDb: %1$s/10</string>
     <string name="movie_detail">Movie Detail</string>
+    <string name="example_title">Wonder Woman</string>
+    <string name="example_rating">IMDb 7.8/10</string>
+    <string name="example_release">15 May, 2017</string>
 </resources>
