@@ -141,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
 
         switch (item.getItemId()){
             case R.id.sort_by_most_popular:
-                if(!movies.isEmpty()) {
+                if(!movies.isEmpty() && movies != null) {
                     movies.clear();
                 }
                 loadDefaultMovies(POPULAR);
@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
 
             case R.id.sort_by_top_rated:
-                if(!movies.isEmpty()) {
+                if(!movies.isEmpty() && movies != null) {
                     movies.clear();
                 }
                 loadDefaultMovies(TOP_RATED);
@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
 
             case R.id.sort_by_upcoming:
-                if(!movies.isEmpty()) {
+                if(!movies.isEmpty() && movies != null) {
                     movies.clear();
                 }
                 loadDefaultMovies(UPCOMING);

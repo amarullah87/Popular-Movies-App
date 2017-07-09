@@ -13,6 +13,7 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -180,19 +181,23 @@ public class DetailsMovieActivity extends AppCompatActivity{
             trailersCall.enqueue(new Callback<Trailers>() {
                 @Override
                 public void onResponse(Call<Trailers> call, Response<Trailers> response) {
-                    if(response.body().getResults() != null){
-                        trailers = response.body().getResults();
-                        trailerAdapter = new TrailerAdapter(getApplicationContext(), trailers);
+                    if(response.isSuccessful() && response.code() != 400) {
+                        if (response.body() != null) {
+                            trailers = response.body().getResults();
+                            trailerAdapter = new TrailerAdapter(getApplicationContext(), trailers);
 
-                        LinearLayoutManager horizontalLayout = new LinearLayoutManager(
-                                getApplicationContext(), LinearLayoutManager.HORIZONTAL, false);
-                        rvTrailer.setLayoutManager(horizontalLayout);
-                        rvTrailer.setNestedScrollingEnabled(false);
-                        rvTrailer.setItemAnimator(new DefaultItemAnimator());
-                        rvTrailer.setAdapter(trailerAdapter);
+                            LinearLayoutManager horizontalLayout = new LinearLayoutManager(
+                                    getApplicationContext(), LinearLayoutManager.HORIZONTAL, false);
+                            rvTrailer.setLayoutManager(horizontalLayout);
+                            rvTrailer.setNestedScrollingEnabled(false);
+                            rvTrailer.setItemAnimator(new DefaultItemAnimator());
+                            rvTrailer.setAdapter(trailerAdapter);
 
+                        } else {
+                            Toast.makeText(getApplicationContext(), R.string.no_data, Toast.LENGTH_SHORT).show();
+                        }
                     }else{
-                        Toast.makeText(getApplicationContext(), R.string.no_data, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(DetailsMovieActivity.this, R.string.oops_something_wrong, Toast.LENGTH_SHORT).show();
                     }
                 }
 
@@ -206,17 +211,22 @@ public class DetailsMovieActivity extends AppCompatActivity{
             reviewsCall.enqueue(new Callback<Reviews>() {
                 @Override
                 public void onResponse(Call<Reviews> call, Response<Reviews> response) {
-                    if(response.body().getResults() != null){
-                        reviews = response.body().getResults();
-                        reviewAdapter = new ReviewAdapter(getApplicationContext(), reviews);
+                    Log.e("Respon Viewer: ", String.valueOf(response.code()));
+                    if(response.isSuccessful() && response.code() != 400) {
+                        if (response.body() != null) {
+                            reviews = response.body().getResults();
+                            reviewAdapter = new ReviewAdapter(getApplicationContext(), reviews);
 
-                        LinearLayoutManager verticalLayout = new LinearLayoutManager(
-                                getApplicationContext(), LinearLayoutManager.VERTICAL, false);
-                        rvReview.setLayoutManager(verticalLayout);
-                        rvReview.setItemAnimator(new DefaultItemAnimator());
-                        rvReview.setAdapter(reviewAdapter);
+                            LinearLayoutManager verticalLayout = new LinearLayoutManager(
+                                    getApplicationContext(), LinearLayoutManager.VERTICAL, false);
+                            rvReview.setLayoutManager(verticalLayout);
+                            rvReview.setItemAnimator(new DefaultItemAnimator());
+                            rvReview.setAdapter(reviewAdapter);
+                        } else {
+                            Toast.makeText(getApplicationContext(), R.string.no_data, Toast.LENGTH_SHORT).show();
+                        }
                     }else{
-                        Toast.makeText(getApplicationContext(), R.string.no_data, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(DetailsMovieActivity.this, R.string.oops_something_wrong, Toast.LENGTH_SHORT).show();
                     }
                 }
 

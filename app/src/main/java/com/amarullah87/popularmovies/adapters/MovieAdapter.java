@@ -57,13 +57,6 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MyViewHolder
                 .placeholder(R.drawable.ic_loading)
                 .error(R.mipmap.ic_launcher)
                 .into(holder.thumbnail);
-
-        holder.viewParent.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(mContext, item.getTitle(), Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     public interface ClickListener {
