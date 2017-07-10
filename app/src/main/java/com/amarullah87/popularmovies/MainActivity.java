@@ -1,6 +1,7 @@
 package com.amarullah87.popularmovies;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -19,6 +20,7 @@ import com.amarullah87.popularmovies.models.Movies;
 import com.amarullah87.popularmovies.utils.InternetConnection;
 import com.amarullah87.popularmovies.utils.RestAPI;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
@@ -38,11 +40,13 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.rvMovies) RecyclerView rvMovies;
     @BindView(R.id.progressBar) ProgressBar progressBar;
 
-    private List<Movie> movies;
+    private List<Movie> movies = new ArrayList<>();
     private MovieAdapter adapter;
 
     private String mSortBy = POPULAR;
-    int cols = 2;
+    private RecyclerView.LayoutManager manager;
+    int colsPortrait = 2;
+    int colsLandscape = 4;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +85,10 @@ public class MainActivity extends AppCompatActivity {
         //Before the retrofit Launch, it will check the network First (Wifi/ Data)
         if(InternetConnection.checkConnection(getApplicationContext())){
 
+            if(!movies.isEmpty()){
+                movies.clear();
+            }
+
             RestAPI restAPI = getDataAPI().create(RestAPI.class);
             Call<Movies> call = restAPI.getMovies(sortType, BuildConfig.MOVIEDB_API_KEY);
 
@@ -89,18 +97,26 @@ public class MainActivity extends AppCompatActivity {
                 public void onResponse(Call<Movies> call, Response<Movies> response) {
                     progressBar.setVisibility(View.GONE);
                     rvMovies.setVisibility(View.VISIBLE);
-                    
-                    if(response.body().getResults() != null){
-                        movies = response.body().getResults();
-                        adapter = new MovieAdapter(getApplicationContext(), movies);
 
-                        RecyclerView.LayoutManager manager = new GridLayoutManager(getApplicationContext(), cols);
-                        rvMovies.setLayoutManager(manager);
-                        rvMovies.setNestedScrollingEnabled(false);
-                        rvMovies.setItemAnimator(new DefaultItemAnimator());
-                        rvMovies.setAdapter(adapter);
+                    if(response.isSuccessful() && response.code() != 400) {
+                        if (response.body() != null) {
+                            movies = response.body().getResults();
+                            adapter = new MovieAdapter(getApplicationContext(), movies);
+
+                            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                                manager = new GridLayoutManager(getApplicationContext(), colsPortrait);
+                            } else {
+                                manager = new GridLayoutManager(getApplicationContext(), colsLandscape);
+                            }
+                            rvMovies.setLayoutManager(manager);
+                            rvMovies.setNestedScrollingEnabled(false);
+                            rvMovies.setItemAnimator(new DefaultItemAnimator());
+                            rvMovies.setAdapter(adapter);
+                        } else {
+                            Toast.makeText(MainActivity.this, R.string.no_data, Toast.LENGTH_SHORT).show();
+                        }
                     }else{
-                        Toast.makeText(MainActivity.this, R.string.no_data, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, R.string.oops_something_wrong, Toast.LENGTH_SHORT).show();
                     }
                 }
 
@@ -141,28 +157,22 @@ public class MainActivity extends AppCompatActivity {
 
         switch (item.getItemId()){
             case R.id.sort_by_most_popular:
-                if(!movies.isEmpty() && movies != null) {
-                    movies.clear();
-                }
                 loadDefaultMovies(POPULAR);
+
                 mSortBy = POPULAR;
                 item.setChecked(true);
                 break;
 
             case R.id.sort_by_top_rated:
-                if(!movies.isEmpty() && movies != null) {
-                    movies.clear();
-                }
                 loadDefaultMovies(TOP_RATED);
+
                 mSortBy = TOP_RATED;
                 item.setChecked(true);
                 break;
 
             case R.id.sort_by_upcoming:
-                if(!movies.isEmpty() && movies != null) {
-                    movies.clear();
-                }
                 loadDefaultMovies(UPCOMING);
+
                 mSortBy = UPCOMING;
                 item.setChecked(true);
                 break;
