@@ -2,19 +2,25 @@ package com.amarullah87.popularmovies;
 
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.amarullah87.popularmovies.adapters.FavouriteListAdapter;
 import com.amarullah87.popularmovies.adapters.MovieAdapter;
+import com.amarullah87.popularmovies.data.MovieDbHelper;
 import com.amarullah87.popularmovies.models.Movie;
 import com.amarullah87.popularmovies.models.Movies;
 import com.amarullah87.popularmovies.utils.InternetConnection;
@@ -29,6 +35,9 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_TITLE;
+import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.TABLE_NAME;
+import static com.amarullah87.popularmovies.utils.Configs.FAVOURITE;
 import static com.amarullah87.popularmovies.utils.Configs.POPULAR;
 import static com.amarullah87.popularmovies.utils.Configs.TOP_RATED;
 import static com.amarullah87.popularmovies.utils.Configs.UPCOMING;
@@ -38,11 +47,14 @@ public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.toolbar) Toolbar toolbar;
     @BindView(R.id.rvMovies) RecyclerView rvMovies;
+    @BindView(R.id.rvFavourites) RecyclerView rvFavourites;
     @BindView(R.id.progressBar) ProgressBar progressBar;
 
+    private SQLiteDatabase mDb;
     private List<Movie> movies = new ArrayList<>();
     private MovieAdapter adapter;
 
+    boolean doubleBackToExitPressedOnce = false;
     private String mSortBy = POPULAR;
     private RecyclerView.LayoutManager manager;
     int colsPortrait = 2;
@@ -55,6 +67,9 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         setSupportActionBar(toolbar);
 
+        MovieDbHelper dbHelper = new MovieDbHelper(this);
+        mDb = dbHelper.getWritableDatabase();
+
         loadDefaultMovies(POPULAR);
         rvMovies.addOnItemTouchListener(new MovieAdapter.RecyclerTouchListener(getApplicationContext(),
                 rvMovies, new MovieAdapter.ClickListener() {
@@ -63,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
                 Movie item = movies.get(position);
                 Bundle extras = new Bundle();
                 Intent intent = new Intent(getApplicationContext(), DetailsMovieActivity.class);
-                extras.putString("idMovie", String.valueOf(item.getId()));
                 extras.putString("idMovie", String.valueOf(item.getId()));
                 extras.putString("average", String.valueOf(item.getVoteAverage()));
                 extras.putString("title", item.getTitle());
@@ -80,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
     private void loadDefaultMovies(String sortType) {
         progressBar.setVisibility(View.VISIBLE);
         rvMovies.setVisibility(View.GONE);
+        rvFavourites.setVisibility(View.GONE);
 
         //I created a Class to Check Network State Called "Internet Connection"
         //Before the retrofit Launch, it will check the network First (Wifi/ Data)
@@ -108,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
                             } else {
                                 manager = new GridLayoutManager(getApplicationContext(), colsLandscape);
                             }
+
                             rvMovies.setLayoutManager(manager);
                             rvMovies.setNestedScrollingEnabled(false);
                             rvMovies.setItemAnimator(new DefaultItemAnimator());
@@ -148,6 +164,10 @@ public class MainActivity extends AppCompatActivity {
             case UPCOMING:
                 menu.findItem(R.id.sort_by_upcoming).setChecked(true);
                 break;
+
+            case FAVOURITE:
+                menu.findItem(R.id.sort_by_fav).setChecked(true);
+                break;
         }
         return true;
     }
@@ -176,7 +196,67 @@ public class MainActivity extends AppCompatActivity {
                 mSortBy = UPCOMING;
                 item.setChecked(true);
                 break;
+
+            case R.id.sort_by_fav:
+                loadFavouriteMovies();
+
+                mSortBy = FAVOURITE;
+                item.setChecked(true);
+                break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void loadFavouriteMovies() {
+        if(!movies.isEmpty()){
+            movies.clear();
+        }
+        rvMovies.setVisibility(View.GONE);
+        rvFavourites.setVisibility(View.VISIBLE);
+
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            manager = new GridLayoutManager(getApplicationContext(), colsPortrait);
+        } else {
+            manager = new GridLayoutManager(getApplicationContext(), colsLandscape);
+        }
+
+        Cursor cursor = getAllFavourites();
+        FavouriteListAdapter favAdapter = new FavouriteListAdapter(cursor, getApplicationContext());
+        rvFavourites.setLayoutManager(manager);
+        rvFavourites.setNestedScrollingEnabled(false);
+        rvFavourites.setItemAnimator(new DefaultItemAnimator());
+        rvFavourites.setAdapter(favAdapter);
+    }
+
+    public Cursor getAllFavourites() {
+        return mDb.query(
+                TABLE_NAME,
+                null,
+                null,
+                null,
+                null,
+                null,
+                COL_TITLE
+        );
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (doubleBackToExitPressedOnce) {
+            super.onBackPressed();
+            android.os.Process.killProcess(android.os.Process.myPid());
+        }else {
+
+            this.doubleBackToExitPressedOnce = true;
+            Toast.makeText(this, "Press again to EXIT.", Toast.LENGTH_SHORT).show();
+
+            new Handler().postDelayed(new Runnable() {
+
+                @Override
+                public void run() {
+                    doubleBackToExitPressedOnce = false;
+                }
+            }, 2000);
+        }
     }
 }

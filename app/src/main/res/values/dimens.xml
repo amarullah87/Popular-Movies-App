@@ -10,4 +10,6 @@
     <dimen name="trailer_height">100dp</dimen>
     <dimen name="backdrop_height">200dp</dimen>
     <dimen name="small_margin">5dp</dimen>
+    <dimen name="small_padding">10dp</dimen>
+    <dimen name="img_fav_padding">12dp</dimen>
 </resources>

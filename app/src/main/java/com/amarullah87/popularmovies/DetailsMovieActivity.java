@@ -1,6 +1,9 @@
 package com.amarullah87.popularmovies;
 
+import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,6 +19,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -23,6 +27,7 @@ import android.widget.Toast;
 
 import com.amarullah87.popularmovies.adapters.ReviewAdapter;
 import com.amarullah87.popularmovies.adapters.TrailerAdapter;
+import com.amarullah87.popularmovies.data.MovieDbHelper;
 import com.amarullah87.popularmovies.models.Review;
 import com.amarullah87.popularmovies.models.Reviews;
 import com.amarullah87.popularmovies.models.Trailer;
@@ -44,6 +49,14 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_BACKDROP;
+import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_ID;
+import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_OVERVIEW;
+import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_POSTER;
+import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_RELEASEDATE;
+import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_TITLE;
+import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_VOTEAVG;
+import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.TABLE_NAME;
 import static com.amarullah87.popularmovies.utils.Configs.getDataAPI;
 
 /**
@@ -52,6 +65,7 @@ import static com.amarullah87.popularmovies.utils.Configs.getDataAPI;
 
 public class DetailsMovieActivity extends AppCompatActivity{
 
+    private static final String TAG = DetailsMovieActivity.class.getSimpleName();
     @BindView(R.id.moviePoster) ImageView moviePoster;
     @BindView(R.id.movieTitle) TextView movieTitle;
     @BindView(R.id.btnWatch) Button btnWatch;
@@ -64,11 +78,13 @@ public class DetailsMovieActivity extends AppCompatActivity{
     @BindView(R.id.toolbar_layout) CollapsingToolbarLayout collapsingToolbar;
     @BindView(R.id.app_bar) AppBarLayout appBarLayout;
     @BindView(R.id.imgHeader) ImageView imgHeader;
+    @BindView(R.id.btnFavourite) ImageButton btnFav;
 
     private List<Trailer> trailers;
     private List<Review> reviews;
     private TrailerAdapter trailerAdapter;
     private ReviewAdapter reviewAdapter;
+    private SQLiteDatabase mDb;
 
     private String idMovie, average, title, poster, backdrop, overview, releaseDate;
     @Override
@@ -82,8 +98,13 @@ public class DetailsMovieActivity extends AppCompatActivity{
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setTitle(R.string.movie_detail);
         }
+
+        MovieDbHelper dbHelper = new MovieDbHelper(this);
+        mDb = dbHelper.getWritableDatabase();
+
         initViews();
         initCollapsingToolbar();
+        setFavourite();
         loadTrailersAndReviews();
 
         rvTrailer.addOnItemTouchListener(new TrailerAdapter.RecyclerTouchListener(getApplicationContext(),
@@ -99,6 +120,7 @@ public class DetailsMovieActivity extends AppCompatActivity{
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(trailers.get(0).getTrailerUrl())));
+                //Toast.makeText(DetailsMovieActivity.this, trailers.get(0).getKey(), Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -143,6 +165,22 @@ public class DetailsMovieActivity extends AppCompatActivity{
             releaseDate = extras.getString("releaseDate");
         }
 
+        btnFav.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int check = getFavouriteMovie(idMovie);
+                if(check > 0){
+                    removeFromFavourites(idMovie);
+                    Toast.makeText(DetailsMovieActivity.this, title + " - Removed from your Favourite List(s)", Toast.LENGTH_SHORT).show();
+                }else{
+                    addToFavourites();
+                    Toast.makeText(DetailsMovieActivity.this, title + " - Added to your Favourite List(s)", Toast.LENGTH_SHORT).show();
+                }
+
+                setFavourite();
+            }
+        });
+
         movieTitle.setText(title);
         Picasso.with(this)
                 .load("http://image.tmdb.org/t/p/w185" + backdrop)
@@ -174,6 +212,7 @@ public class DetailsMovieActivity extends AppCompatActivity{
         if(InternetConnection.checkConnection(getApplicationContext())){
 
             progressBar.setVisibility(View.VISIBLE);
+            btnWatch.setVisibility(View.GONE);
             RestAPI restAPI = getDataAPI().create(RestAPI.class);
 
             Call<Trailers> trailersCall = restAPI.getTrailers(Long.parseLong(idMovie),
@@ -183,6 +222,8 @@ public class DetailsMovieActivity extends AppCompatActivity{
                 public void onResponse(Call<Trailers> call, Response<Trailers> response) {
                     if(response.isSuccessful() && response.code() != 400) {
                         if (response.body() != null) {
+                            btnWatch.setVisibility(View.VISIBLE);
+
                             trailers = response.body().getResults();
                             trailerAdapter = new TrailerAdapter(getApplicationContext(), trailers);
 
@@ -239,5 +280,46 @@ public class DetailsMovieActivity extends AppCompatActivity{
         }else{
             Toast.makeText(this, R.string.oops_network, Toast.LENGTH_LONG).show();
         }
+    }
+
+    private int getFavouriteMovie(String idMovie) {
+        String selectQuery = "SELECT * FROM " + TABLE_NAME + " WHERE " + COL_ID + " = " + idMovie;
+        Log.d(TAG, selectQuery);
+
+        Cursor c = mDb.rawQuery(selectQuery, null);
+
+        int total = 0;
+        if (c != null) {
+            c.moveToFirst();
+            total = c.getCount();
+            c.close();
+        }
+        return total;
+    }
+
+    private void setFavourite(){
+        int cek = getFavouriteMovie(idMovie);
+        if(cek > 0){
+            btnFav.setImageResource(R.drawable.ic_favorite_white);
+        }else{
+            btnFav.setImageResource(R.drawable.ic_favorite_border_white);
+        }
+    }
+
+    private long addToFavourites(){
+        ContentValues cv = new ContentValues();
+        cv.put(COL_ID, idMovie);
+        cv.put(COL_VOTEAVG, average);
+        cv.put(COL_TITLE, title);
+        cv.put(COL_POSTER, poster);
+        cv.put(COL_BACKDROP, backdrop);
+        cv.put(COL_OVERVIEW, overview);
+        cv.put(COL_RELEASEDATE, releaseDate);
+
+        return mDb.insert(TABLE_NAME, null, cv);
+    }
+
+    private boolean removeFromFavourites(String idMovie){
+        return mDb.delete(TABLE_NAME, COL_ID + " = " + idMovie, null) > 0;
     }
 }

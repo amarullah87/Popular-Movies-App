@@ -15,6 +15,7 @@ public class Configs {
     public final static String POPULAR = "popular";
     public final static String TOP_RATED = "top_rated";
     public final static String UPCOMING = "upcoming";
+    public final static String FAVOURITE = "favourite";
     private static final String BASE_URL = "https://api.themoviedb.org/";
     public static Retrofit getDataAPI(){
 

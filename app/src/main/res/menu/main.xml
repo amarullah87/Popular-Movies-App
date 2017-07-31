@@ -20,6 +20,10 @@
                 <item
                     android:id="@+id/sort_by_upcoming"
                     android:title="@string/upcoming" />
+
+                <item
+                    android:id="@+id/sort_by_fav"
+                    android:title="@string/favorites" />
             </group>
         </menu>
     </item>
