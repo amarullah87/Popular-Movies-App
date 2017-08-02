@@ -27,11 +27,13 @@ import android.widget.Toast;
 
 import com.amarullah87.popularmovies.adapters.ReviewAdapter;
 import com.amarullah87.popularmovies.adapters.TrailerAdapter;
-import com.amarullah87.popularmovies.data.MovieDbHelper;
+import com.amarullah87.popularmovies.utilities.MovieContract;
+import com.amarullah87.popularmovies.utilities.MovieDbHelper;
 import com.amarullah87.popularmovies.models.Review;
 import com.amarullah87.popularmovies.models.Reviews;
 import com.amarullah87.popularmovies.models.Trailer;
 import com.amarullah87.popularmovies.models.Trailers;
+import com.amarullah87.popularmovies.utilities.MovieProvider;
 import com.amarullah87.popularmovies.utils.InternetConnection;
 import com.amarullah87.popularmovies.utils.RestAPI;
 import com.squareup.picasso.Picasso;
@@ -49,14 +51,14 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_BACKDROP;
-import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_ID;
-import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_OVERVIEW;
-import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_POSTER;
-import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_RELEASEDATE;
-import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_TITLE;
-import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_VOTEAVG;
-import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.TABLE_NAME;
+import static com.amarullah87.popularmovies.utilities.MovieContract.MovieEntry.COL_BACKDROP;
+import static com.amarullah87.popularmovies.utilities.MovieContract.MovieEntry.COL_ID;
+import static com.amarullah87.popularmovies.utilities.MovieContract.MovieEntry.COL_OVERVIEW;
+import static com.amarullah87.popularmovies.utilities.MovieContract.MovieEntry.COL_POSTER;
+import static com.amarullah87.popularmovies.utilities.MovieContract.MovieEntry.COL_RELEASEDATE;
+import static com.amarullah87.popularmovies.utilities.MovieContract.MovieEntry.COL_TITLE;
+import static com.amarullah87.popularmovies.utilities.MovieContract.MovieEntry.COL_VOTEAVG;
+import static com.amarullah87.popularmovies.utilities.MovieContract.MovieEntry.TABLE_NAME;
 import static com.amarullah87.popularmovies.utils.Configs.getDataAPI;
 
 /**
@@ -171,10 +173,8 @@ public class DetailsMovieActivity extends AppCompatActivity{
                 int check = getFavouriteMovie(idMovie);
                 if(check > 0){
                     removeFromFavourites(idMovie);
-                    Toast.makeText(DetailsMovieActivity.this, title + " - Removed from your Favourite List(s)", Toast.LENGTH_SHORT).show();
                 }else{
                     addToFavourites();
-                    Toast.makeText(DetailsMovieActivity.this, title + " - Added to your Favourite List(s)", Toast.LENGTH_SHORT).show();
                 }
 
                 setFavourite();
@@ -212,7 +212,7 @@ public class DetailsMovieActivity extends AppCompatActivity{
         if(InternetConnection.checkConnection(getApplicationContext())){
 
             progressBar.setVisibility(View.VISIBLE);
-            btnWatch.setVisibility(View.GONE);
+            btnWatch.setVisibility(View.INVISIBLE);
             RestAPI restAPI = getDataAPI().create(RestAPI.class);
 
             Call<Trailers> trailersCall = restAPI.getTrailers(Long.parseLong(idMovie),
@@ -283,17 +283,19 @@ public class DetailsMovieActivity extends AppCompatActivity{
     }
 
     private int getFavouriteMovie(String idMovie) {
-        String selectQuery = "SELECT * FROM " + TABLE_NAME + " WHERE " + COL_ID + " = " + idMovie;
-        Log.d(TAG, selectQuery);
+        String selectQuery = MovieContract.MovieEntry._ID + " = ?";
+        String[] selectionArgs = new String[]{idMovie};
 
-        Cursor c = mDb.rawQuery(selectQuery, null);
-
+        Uri movie = Uri.parse(String.valueOf(MovieContract.MovieEntry.CONTENT_URI + "/" + idMovie));
+        Cursor c = getContentResolver().query(movie, null, null, null, null);
         int total = 0;
-        if (c != null) {
+        if(c != null){
             c.moveToFirst();
             total = c.getCount();
+
             c.close();
         }
+
         return total;
     }
 
@@ -306,9 +308,9 @@ public class DetailsMovieActivity extends AppCompatActivity{
         }
     }
 
-    private long addToFavourites(){
+    private void addToFavourites(){
         ContentValues cv = new ContentValues();
-        cv.put(COL_ID, idMovie);
+        cv.put(MovieContract.MovieEntry._ID, idMovie);
         cv.put(COL_VOTEAVG, average);
         cv.put(COL_TITLE, title);
         cv.put(COL_POSTER, poster);
@@ -316,10 +318,18 @@ public class DetailsMovieActivity extends AppCompatActivity{
         cv.put(COL_OVERVIEW, overview);
         cv.put(COL_RELEASEDATE, releaseDate);
 
-        return mDb.insert(TABLE_NAME, null, cv);
+        Uri uri = getContentResolver().insert(MovieContract.MovieEntry.CONTENT_URI, cv);
+        if (uri != null) {
+            Toast.makeText(DetailsMovieActivity.this, title + " - Added to your Favourite List(s)", Toast.LENGTH_SHORT).show();
+        }
     }
 
-    private boolean removeFromFavourites(String idMovie){
-        return mDb.delete(TABLE_NAME, COL_ID + " = " + idMovie, null) > 0;
+    private void removeFromFavourites(String idMovie){
+        int delete = getContentResolver().delete(MovieContract.MovieEntry.CONTENT_URI, MovieContract.MovieEntry._ID + " = " + idMovie, null);
+        if(delete > 0){
+            Toast.makeText(DetailsMovieActivity.this, title + " - Removed from your Favourite List(s)", Toast.LENGTH_SHORT).show();
+        }else{
+            Toast.makeText(this, R.string.oops_something_wrong, Toast.LENGTH_SHORT).show();
+        }
     }
 }

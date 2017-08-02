@@ -15,4 +15,5 @@
     <string name="example_rating">IMDb 7.8/10</string>
     <string name="example_release">15 May, 2017</string>
     <string name="oops_something_wrong">Oops! Something Wrong.</string>
+    <string name="content_authority">com.amarullah87.popularmovies</string>
 </resources>

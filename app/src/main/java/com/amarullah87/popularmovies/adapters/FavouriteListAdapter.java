@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -20,15 +21,14 @@ import android.widget.Toast;
 
 import com.amarullah87.popularmovies.DetailsMovieActivity;
 import com.amarullah87.popularmovies.R;
-import com.amarullah87.popularmovies.data.MovieContract;
-import com.amarullah87.popularmovies.data.MovieDbHelper;
+import com.amarullah87.popularmovies.utilities.MovieContract;
+import com.amarullah87.popularmovies.utilities.MovieDbHelper;
 import com.squareup.picasso.Picasso;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.COL_ID;
-import static com.amarullah87.popularmovies.data.MovieContract.MovieEntry.TABLE_NAME;
+import static com.amarullah87.popularmovies.utilities.MovieContract.MovieEntry.TABLE_NAME;
 
 /**
  * Created by apandhis on 31/07/17.
@@ -71,32 +71,26 @@ public class FavouriteListAdapter extends RecyclerView.Adapter<FavouriteListAdap
 
         final long id = mCursor.getLong(mCursor.getColumnIndex(MovieContract.MovieEntry._ID));
         holder.itemView.setTag(id);
-        MovieDbHelper dbHelper = new MovieDbHelper(mContext);
-        mDb = dbHelper.getWritableDatabase();
         holder.thumbnail.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 Bundle extras = new Bundle();
                 Intent intent = new Intent(mContext, DetailsMovieActivity.class);
-                String selectQuery = "SELECT * FROM " + TABLE_NAME + " WHERE " + MovieContract.MovieEntry._ID + " = " + id;
-                Log.d("Adapter: ", selectQuery);
-                Cursor c = null;
-                try {
-                    c = mDb.rawQuery(selectQuery, null);
-                    if (c != null) {
-                        c.moveToFirst();
-                        extras.putString("idMovie", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_ID)));
-                        extras.putString("average", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_VOTEAVG)));
-                        extras.putString("title", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_TITLE)));
-                        extras.putString("poster", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_POSTER)));
-                        extras.putString("backdrop", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_BACKDROP)));
-                        extras.putString("overview", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_OVERVIEW)));
-                        extras.putString("releaseDate", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_RELEASEDATE)));
-                    }
-                }finally {
+
+                Uri movie = Uri.parse(String.valueOf(MovieContract.MovieEntry.CONTENT_URI + "/" + String.valueOf(id)));
+                Cursor c = mContext.getContentResolver().query(movie, null, null, null, null);
+                if (c != null) {
+                    c.moveToFirst();
+                    extras.putString("idMovie", c.getString(c.getColumnIndex(MovieContract.MovieEntry._ID)));
+                    extras.putString("average", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_VOTEAVG)));
+                    extras.putString("title", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_TITLE)));
+                    extras.putString("poster", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_POSTER)));
+                    extras.putString("backdrop", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_BACKDROP)));
+                    extras.putString("overview", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_OVERVIEW)));
+                    extras.putString("releaseDate", c.getString(c.getColumnIndex(MovieContract.MovieEntry.COL_RELEASEDATE)));
                     c.close();
                 }
-
                 intent.putExtras(extras);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 mContext.startActivity(intent);
@@ -110,7 +104,7 @@ public class FavouriteListAdapter extends RecyclerView.Adapter<FavouriteListAdap
 
     @Override
     public int getItemCount() {
-        return mCursor.getCount();
+        return (null != mCursor ? mCursor.getCount() : 0);
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
